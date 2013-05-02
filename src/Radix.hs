@@ -6,10 +6,11 @@ module Radix (
 
 
 import Control.Monad
-import Data.Char (ord, chr, toUpper)
-import Data.List (foldl')
+import Data.Char
+import Data.Function
+import Data.List
 import Data.Maybe
-import Numeric (showIntAtBase)
+import Numeric
 import Base
 import System.Environment
 import System.FilePath
@@ -22,11 +23,52 @@ main = do
 	then printHelp
 	else case args of
 	    [] -> printHelp
-	    _ -> mapM_ (uncurry printBases) $ args >>= \arg -> map (,arg) bases
+	    _ -> mapM_' (\arg -> printBases arg >> putStrLn "") printBases args
 
 
-bases :: [Base]
-bases = [2, 8, 10, 16]
+newtype InBase = InBase { runInBase :: Base }
+    deriving (Eq, Ord)
+
+instance Show InBase where
+    show = show . runInBase
+
+
+newtype OutBase = OutBase { runOutBase :: Base }
+    deriving (Eq, Ord)
+
+instance Show OutBase where
+    show = show . runOutBase
+
+
+allBases :: [Base]
+allBases = [2 .. 36]
+
+
+stdBases :: [Base]
+stdBases = [2, 8, 10, 16]
+
+
+bases :: (a -> Base -> Maybe b) -> (Base -> c) -> a -> [(c, b)]
+bases f g x = mapMaybe h allBases
+    where
+	h base = fmap (g base,) $ x `f` base
+
+
+inBases :: (FromBase a, Integral n) => a -> [(InBase, n)]
+inBases = bases fromBase InBase
+
+
+outBases :: (ToBase a, Integral n) => n -> [(OutBase, a)]
+outBases = bases toBase OutBase
+
+
+genBaseInfo :: (FromBase a, ToBase b, Integral n) => (InBase -> Bool) -> (OutBase -> Bool) -> a -> [(InBase, n, OutBase, b)]
+genBaseInfo pIn pOut input = do
+    (inBase, num) <- inBases input
+    guard $ pIn inBase
+    (outBase, output) <- outBases num
+    guard $ pOut outBase
+    return (inBase, num, outBase, output)
 
 
 printHelp :: IO ()
@@ -35,25 +77,44 @@ printHelp = do
   putStrLn $ "Usage: " ++ takeBaseName progName ++ " NUM"
 
 
-printBases :: (FromBase a) => Base -> a -> IO ()
-printBases outBase raw = do
-    mapM_ pretty $ processBases outBase raw
-    putStrLn ""
+mapM' :: (Monad m) => (a -> m b) -> (a -> m b) -> [a] -> m [b]
+mapM' _ _ [] = return []
+mapM' _ g [x] = g x >>= \y -> return [y]
+mapM' f g (x:xs) = f x >>= \y -> liftM (y :) $ mapM' f g xs
+
+
+mapM_' :: (Monad m) => (a -> m b) -> (a -> m b) -> [a] -> m ()
+mapM_' f g xs = mapM' f g xs >> return ()
+
+
+printBases :: String -> IO ()
+printBases input = mapM_' putStrLn putStr
+    $ map (unlines . map pretty)
+    $ groupBy ((==) `on` first)
+    $ filter (not . sameBase)
+    $ genBaseInfo pIn pOut input
     where
-	pretty (inBase, res) = putStrLn $ pad inBase ++ " -> " ++ pad outBase ++ ": " ++ res
-	pad n = case show n of
-	    [d] -> [' ', d]
-	    other -> other
+	pIn = (`elem` map InBase stdBases)
+	pOut = (`elem` map OutBase stdBases)
+	sameBase (inBase, _, outBase, _) = runInBase inBase == runOutBase outBase
+	first (x, _, _, _) = x
 
 
-processBases :: (FromBase a, ToBase b) => Base -> a -> [(Base, b)]
-processBases outBase raw = mapMaybe (\(inBase, n) -> fmap (inBase,) $ toBase outBase n) bns
+pad :: Int -> String -> String
+pad n str = replicate (n - length front) ' ' ++ front ++ end
     where
-	bns = mapMaybe (\inBase -> fmap (inBase,) $ fromBase inBase raw) bases
+	(front, end) = span (not . isSpace) str
 
 
-
-
+pretty :: (Integral n, Show n) => (InBase, n, OutBase, String) -> String
+pretty (inBase, num, outBase, output) = showBase False inBase ++ show num ++ " -> " ++ showBase True outBase ++ output
+    where
+	showBase :: (Show a) => Bool -> a -> String
+	showBase doPad x = let
+	    res = "(" ++ show x ++ ") "
+	    in if doPad
+		then pad 4 res
+		else res
 
 
 

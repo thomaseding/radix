@@ -38,18 +38,18 @@ type Base = Integer
 
 
 class ToBase a where
-    toBase :: (Integral n) => Base -> n -> Maybe a
+    toBase :: (Integral n) => n -> Base -> Maybe a
 
 
 instance ToBase String where
-    toBase base = fmap fixZero . (mapM numToChar <=< toBase base)
+    toBase num = fmap fixZero . (mapM numToChar <=< toBase num)
 	where
 	    fixZero "" = "0"
 	    fixZero str = str
 
 
 instance (Integral) n => ToBase [n] where
-    toBase base = Just . reverse . toBase'
+    num `toBase` base = Just . reverse . toBase' $ num
 	where
 	    toBase' 0 = []
 	    toBase' n = case n `divMod` fromIntegral base of
@@ -57,15 +57,15 @@ instance (Integral) n => ToBase [n] where
 
 
 class FromBase a where
-    fromBase :: (Integral n) => Base -> a -> Maybe n
+    fromBase :: (Integral n) => a -> Base -> Maybe n
 
 
 instance FromBase String where
-    fromBase base = fromBase base <=< mapM (fmap fromIntegral . charToNum)
+    raw `fromBase` base  = flip fromBase base <=< mapM (fmap fromIntegral . charToNum) $ raw
 
 
 instance (Integral n) => FromBase [n] where
-    fromBase base = fmap (fromIntegral . sum') . sequence . zipWith f (iterate (* fromIntegral base) 1) . reverse
+    raw `fromBase` base = fmap (fromIntegral . sum') . sequence . zipWith f (iterate (* fromIntegral base) 1) . reverse $ raw
 	where
 	    f scale n = if n >= fromIntegral base
 		then Nothing
