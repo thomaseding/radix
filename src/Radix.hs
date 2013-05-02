@@ -23,7 +23,19 @@ main = do
 	then printHelp
 	else case args of
 	    [] -> printHelp
-	    _ -> mapM_' (\arg -> printBases arg >> putStrLn "") printBases args
+	    _ -> sequence_ $ mapKnowingLast emit args
+    where
+	emit NotLast arg = printBases arg >> putStrLn ""
+	emit Last arg = printBases arg
+
+
+data Lastness = NotLast | Last
+
+
+mapKnowingLast :: (Lastness -> a -> b) -> [a] -> [b]
+mapKnowingLast _ [] = []
+mapKnowingLast f [x] = [f Last x]
+mapKnowingLast f (x:xs) = f NotLast x : mapKnowingLast f xs
 
 
 newtype InBase = InBase { runInBase :: Base }
@@ -77,24 +89,9 @@ printHelp = do
   putStrLn $ "Usage: " ++ takeBaseName progName ++ " NUM"
 
 
-mapM' :: (Monad m) => (a -> m b) -> (a -> m b) -> [a] -> m [b]
-mapM' _ _ [] = return []
-mapM' f g xs = do
-    ys <- mapM f $ init xs
-    y <- g $ last xs
-    return $ ys ++ [y]
-
-
-mapM_' :: (Monad m) => (a -> m b) -> (a -> m b) -> [a] -> m ()
-mapM_' _ _ [] = return ()
-mapM_' f g xs = do
-    mapM_ f $ init xs
-    g $ last xs
-    return ()
-
-
 printBases :: String -> IO ()
-printBases input = mapM_' putStrLn putStr
+printBases input = sequence_
+    $ mapKnowingLast emit
     $ map (unlines . map pretty)
     $ groupBy ((==) `on` first)
     $ filter (not . sameBase)
@@ -104,6 +101,9 @@ printBases input = mapM_' putStrLn putStr
 	pOut = (`elem` map OutBase stdBases)
 	sameBase (inBase, _, outBase, _) = runInBase inBase == runOutBase outBase
 	first (x, _, _, _) = x
+	emit lastness = case lastness of
+	    NotLast -> putStrLn
+	    Last -> putStr
 
 
 pad :: Int -> String -> String
