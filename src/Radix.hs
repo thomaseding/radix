@@ -79,12 +79,18 @@ printHelp = do
 
 mapM' :: (Monad m) => (a -> m b) -> (a -> m b) -> [a] -> m [b]
 mapM' _ _ [] = return []
-mapM' _ g [x] = g x >>= \y -> return [y]
-mapM' f g (x:xs) = f x >>= \y -> liftM (y :) $ mapM' f g xs
+mapM' f g xs = do
+    ys <- mapM f $ init xs
+    y <- g $ last xs
+    return $ ys ++ [y]
 
 
 mapM_' :: (Monad m) => (a -> m b) -> (a -> m b) -> [a] -> m ()
-mapM_' f g xs = mapM' f g xs >> return ()
+mapM_' _ _ [] = return ()
+mapM_' f g xs = do
+    mapM_ f $ init xs
+    g $ last xs
+    return ()
 
 
 printBases :: String -> IO ()
