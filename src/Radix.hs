@@ -1,8 +1,8 @@
 {-# LANGUAGE TupleSections #-}
 
 module Radix (
-      main
-    ) where
+    main
+) where
 
 
 import Control.Monad
@@ -20,13 +20,16 @@ main :: IO ()
 main = do
     args <- getArgs
     if any (`elem` ["-h", "--help"]) args
-	then printHelp
-	else case args of
-	    [] -> printHelp
-	    _ -> sequence_ $ mapKnowingLast emit args
+        then printHelp
+        else case args of
+            [] -> printHelp
+            "--pad" : nStr : rest -> let
+                n = max (read nStr) 0
+                in sequence_ $ mapKnowingLast (emit $ Just n) rest
+            _ -> sequence_ $ mapKnowingLast (emit Nothing) args
     where
-	emit NotLast arg = printBases arg >> putStrLn ""
-	emit Last arg = printBases arg
+        emit mPad NotLast arg = printBases mPad arg >> putStrLn ""
+        emit mPad Last arg = printBases mPad arg
 
 
 data Lastness = NotLast | Last
@@ -63,7 +66,7 @@ stdBases = [2, 8, 10, 16]
 bases :: (a -> Base -> Maybe b) -> (Base -> c) -> a -> [(c, b)]
 bases f g x = mapMaybe h allBases
     where
-	h base = fmap (g base,) $ x `f` base
+        h base = fmap (g base,) $ x `f` base
 
 
 inBases :: (FromBase a, Integral n) => a -> [(InBase, n)]
@@ -86,41 +89,47 @@ genBaseInfo pIn pOut input = do
 printHelp :: IO ()
 printHelp = do
   progName <- getProgName
-  putStrLn $ "Usage: " ++ takeBaseName progName ++ " NUM"
+  putStrLn $ "Usage: " ++ takeBaseName progName ++ " [--pad NUM]? [NUM]+"
 
 
-printBases :: String -> IO ()
-printBases input = sequence_
+printBases :: Maybe PadAmount -> String -> IO ()
+printBases mPad input = sequence_
     $ mapKnowingLast emit
-    $ map (unlines . map pretty)
+    $ map (unlines . map (pretty mPad))
     $ groupBy ((==) `on` first)
     $ filter (not . sameBase)
     $ genBaseInfo pIn pOut input
     where
-	pIn = (`elem` map InBase stdBases)
-	pOut = (`elem` map OutBase stdBases)
-	sameBase (inBase, _, outBase, _) = runInBase inBase == runOutBase outBase
-	first (x, _, _, _) = x
-	emit lastness = case lastness of
-	    NotLast -> putStrLn
-	    Last -> putStr
+        pIn = (`elem` map InBase stdBases)
+        pOut = (`elem` map OutBase stdBases)
+        sameBase (inBase, _, outBase, _) = runInBase inBase == runOutBase outBase
+        first (x, _, _, _) = x
+        emit lastness = case lastness of
+            NotLast -> putStrLn
+            Last -> putStr
 
 
-pad :: Int -> String -> String
-pad n str = replicate (n - length front) ' ' ++ front ++ end
+padWith :: Char -> Int -> String -> String
+padWith c n str = replicate (n - length front) c ++ front ++ end
     where
-	(front, end) = span (not . isSpace) str
+        (front, end) = span (not . isSpace) str
 
 
-pretty :: (Integral n, Show n) => (InBase, n, OutBase, String) -> String
-pretty (inBase, num, outBase, output) = showBase False inBase ++ show num ++ " -> " ++ showBase True outBase ++ output
+type PadAmount = Int
+
+
+pretty :: (Integral n, Show n) => Maybe PadAmount -> (InBase, n, OutBase, String) -> String
+pretty mPad (inBase, num, outBase, output) = showBase False inBase ++ show num ++ " -> " ++ showBase True outBase ++ output'
     where
-	showBase :: (Show a) => Bool -> a -> String
-	showBase doPad x = let
-	    res = "(" ++ show x ++ ") "
-	    in if doPad
-		then pad 4 res
-		else res
+        showBase :: (Show a) => Bool -> a -> String
+        showBase doPad x = let
+            res = "(" ++ show x ++ ") "
+            in if doPad
+                then padWith ' ' 4 res
+                else res
+        output' = case mPad of
+            Nothing -> output
+            Just n -> padWith '0' n output
 
 
 
