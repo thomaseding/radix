@@ -1,5 +1,5 @@
 # radix
-Command-line tool for emitting a number in various bases.
+Command-line tool for emitting numbers in various bases.
 
 ```bash
 > radix a7
