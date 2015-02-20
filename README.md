@@ -1,6 +1,34 @@
 # radix
 Command-line tool for emitting numbers in various bases.
 
+-----
+
+Homepage: [https://github.com/thomaseding/up](https://github.com/thomaseding/up)
+
+Hackage: [https://hackage.haskell.org/package/up](https://hackage.haskell.org/package/up)
+
+
+
+------
+
+
+Install from git repository:
+```
+$ cabal configure
+$ cabal build
+$ cabal install
+```
+
+Install from Hackage.
+```
+$ cabal update
+$ cabal install up
+```
+
+These will install the `up` command.
+
+--------
+
 ```bash
 > radix a7
 (16) 167 ->  (2) 10100111
