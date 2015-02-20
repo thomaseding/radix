@@ -2,15 +2,16 @@
 --  see http://haskell.org/cabal/users-guide/
 
 name:                radix
-version:             1.0.0
-synopsis:            Displays numbers in various bases
+version:             1.0.0.0
+synopsis:            Command-line tool for emitting numbers in various bases.
 -- description:         
 license:             BSD3
 license-file:        LICENSE
 author:              Thomas Eding
 maintainer:          thomasedingcode@gmail.com
+homepage:            https://github.com/thomaseding/radix
 -- copyright:           
--- category:            
+category:            Utils
 build-type:          Simple
 cabal-version:       >=1.8
 
