@@ -3,9 +3,9 @@ Command-line tool for emitting numbers in various bases.
 
 -----
 
-Homepage: [https://github.com/thomaseding/up](https://github.com/thomaseding/radix)
+Homepage: [https://github.com/thomaseding/radix](https://github.com/thomaseding/radix)
 
-Hackage: [https://hackage.haskell.org/package/up](https://hackage.haskell.org/package/radix)
+Hackage: [https://hackage.haskell.org/package/radix](https://hackage.haskell.org/package/radix)
 
 
 
@@ -28,6 +28,8 @@ $ cabal install radix
 These will install the `radix` command.
 
 --------
+
+Example usage:
 
 ```bash
 > radix a7
