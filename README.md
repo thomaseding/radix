@@ -3,9 +3,9 @@ Command-line tool for emitting numbers in various bases.
 
 -----
 
-Homepage: [https://github.com/thomaseding/up](https://github.com/thomaseding/up)
+Homepage: [https://github.com/thomaseding/up](https://github.com/thomaseding/radix)
 
-Hackage: [https://hackage.haskell.org/package/up](https://hackage.haskell.org/package/up)
+Hackage: [https://hackage.haskell.org/package/up](https://hackage.haskell.org/package/radix)
 
 
 
@@ -22,10 +22,10 @@ $ cabal install
 Install from Hackage.
 ```
 $ cabal update
-$ cabal install up
+$ cabal install radix
 ```
 
-These will install the `up` command.
+These will install the `radix` command.
 
 --------
 
